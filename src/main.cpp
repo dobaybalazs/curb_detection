@@ -17,6 +17,10 @@ float params::max_y = 5;
 float params::min_y = 5;
 float params::max_z = 5;
 float params::min_z = 5;
+bool params::isUnion = false;
+bool params::filterAngle = false;
+double params::max_angle = 180.0;
+double params::min_angle = 0.0;
 
 void setParams(curb_test::curb_detectionConfig &config,uint32_t level){
     params::max_intensity_thres = config.max_intensity;
@@ -36,6 +40,10 @@ void setParams(curb_test::curb_detectionConfig &config,uint32_t level){
     params::min_y = config.min_y;
     params::max_z = config.max_z;
     params::min_z = config.min_z;
+    params::isUnion = config.isUnion;
+    params::filterAngle = config.filterAngle;
+    params::max_angle = config.angle_max;
+    params::min_angle = config.angle_min;
 }
 
 

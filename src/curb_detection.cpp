@@ -74,6 +74,22 @@ std::vector<int> CurbDetector::distFilter(const pcl::PointCloud<pcl::PointXYZI>:
     return result_indicies;
 }
 
+std::vector<int> CurbDetector::angleFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr input_cloud){
+    std::vector<int> result_indicies;
+     for(size_t i = 0;i < number_of_channels;++i){
+        for(size_t j = 2;j<number_of_points-2;++j){
+            double first_angle = atan2(input_cloud->points[i*number_of_points+j-2].y-input_cloud->points[i*number_of_points+j].y,input_cloud->points[i*number_of_points+j-2].x-input_cloud->points[i*number_of_points+j].x);
+            double second_angle = atan2(input_cloud->points[i*number_of_points+j+2].y-input_cloud->points[i*number_of_points+j].y,input_cloud->points[i*number_of_points+j+2].x-input_cloud->points[i*number_of_points+j].x);
+            double angle = (first_angle-second_angle)*180/M_PI;
+            if (angle < 0) { angle += 2 * M_PI; }
+            if(angle>params::min_angle && angle<params::max_angle){
+                result_indicies.push_back(i*number_of_points+j);
+            }
+        }
+    }
+    return result_indicies;
+}
+
 
 
 void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud){
@@ -94,6 +110,7 @@ void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud
     std::vector<int> intensity_indicies;
     std::vector<int> zdiff_indicies;
     std::vector<int> dist_indicies;
+    std::vector<int> angle_indicies;
 
     //Result container
     std::vector<std::vector<int>> result_indicies;
@@ -104,17 +121,23 @@ void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud
         std::sort(intensity_indicies.begin(),intensity_indicies.end());
         result_indicies.push_back(intensity_indicies);
     }
+    //Filter point cloud based on distance difference values
+    if(params::filterDist){
+        dist_indicies = CurbDetector::distFilter(cloud_ptr);
+        std::sort(dist_indicies.begin(),dist_indicies.end());
+        result_indicies.push_back(dist_indicies);
+    }
     //Filter point cloud based on z difference values
     if(params::filterZ){
         zdiff_indicies = CurbDetector::zFilter(cloud_ptr);
         std::sort(zdiff_indicies.begin(),zdiff_indicies.end());
         result_indicies.push_back(zdiff_indicies);
     }
-    //Filter point cloud based on distance difference values
-    if(params::filterDist){
-        dist_indicies = CurbDetector::distFilter(cloud_ptr);
-        std::sort(dist_indicies.begin(),dist_indicies.end());
-        result_indicies.push_back(dist_indicies);
+
+    if(params::filterAngle){
+        angle_indicies = CurbDetector::angleFilter(cloud_ptr);
+        std::sort(angle_indicies.begin(),angle_indicies.end());
+        result_indicies.push_back(angle_indicies);
     }
 
     //Filtering results
@@ -137,15 +160,39 @@ void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud
             }
         }else if(result_indicies.size()==2){
             std::vector<int> intersection;
-            std::set_intersection(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(intersection));
+            if(params::isUnion)
+                std::set_union(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(intersection));
+            else
+                std::set_intersection(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(intersection));
             for(const auto& idx:intersection){
                 result_ptr->points.push_back(cloud_ptr->points[idx]);
             }
         }else if(result_indicies.size()==3){
             std::vector<int> temp;
             std::vector<int> intersection;
-            std::set_intersection(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(temp));
-            std::set_intersection(temp.begin(),temp.end(),result_indicies[1].begin(),result_indicies[1].end(),std::back_inserter(intersection));
+            if(params::isUnion){
+                std::set_union(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(temp));
+                std::set_union(temp.begin(),temp.end(),result_indicies[1].begin(),result_indicies[1].end(),std::back_inserter(intersection));
+            }else{
+                std::set_intersection(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(temp));
+                std::set_intersection(temp.begin(),temp.end(),result_indicies[1].begin(),result_indicies[1].end(),std::back_inserter(intersection));
+            }
+            for(const auto& idx:intersection){
+                result_ptr->points.push_back(cloud_ptr->points[idx]);
+            }
+        }else if(result_indicies.size()==4){
+            std::vector<int> temp;
+            std::vector<int> temp2;
+            std::vector<int> intersection;
+            if(params::isUnion){
+                std::set_union(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(temp));
+                std::set_union(temp.begin(),temp.end(),result_indicies[1].begin(),result_indicies[1].end(),std::back_inserter(temp2));
+                std::set_union(temp2.begin(),temp2.end(),result_indicies[2].begin(),result_indicies[2].end(),std::back_inserter(intersection));
+            }else{
+                std::set_intersection(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(temp));
+                std::set_intersection(temp.begin(),temp.end(),result_indicies[1].begin(),result_indicies[1].end(),std::back_inserter(temp2));
+                std::set_intersection(temp2.begin(),temp2.end(),result_indicies[2].begin(),result_indicies[2].end(),std::back_inserter(intersection));
+            }
             for(const auto& idx:intersection){
                 result_ptr->points.push_back(cloud_ptr->points[idx]);
             }

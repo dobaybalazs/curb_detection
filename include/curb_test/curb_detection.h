@@ -55,6 +55,10 @@ namespace params{
   extern float min_y;
   extern float max_z;
   extern float min_z;
+  extern bool isUnion;
+  extern bool filterAngle;
+  extern double max_angle;
+  extern double min_angle;
 };
 //Curb detector class
 class CurbDetector{
@@ -77,6 +81,8 @@ class CurbDetector{
     std::vector<int> zFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr);
 
     std::vector<int> distFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr);
+
+    std::vector<int> angleFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr);
 
     void firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>&);
 
