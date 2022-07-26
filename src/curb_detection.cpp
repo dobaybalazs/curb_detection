@@ -2,9 +2,10 @@
 
 
 CurbDetector::CurbDetector(ros::NodeHandle* nh):number_of_channels(64),number_of_points(512){
-    sub_pcl = nh->subscribe("/left_os1/os1_cloud_node/points",1,&CurbDetector::firstCloudFilter,this);
+    sub_pcl = nh->subscribe(params::input_cloud,1,&CurbDetector::cloudFilter,this);
 
-    pub_fpoints = nh->advertise<pcl::PCLPointCloud2>("/detected_points",1);
+    left_lane = nh->advertise<pcl::PCLPointCloud2>("/left_points",1);
+    right_lane = nh->advertise<pcl::PCLPointCloud2>("/right_points",1);
 }
 //First method
 void CurbDetector::sortPoints(pcl::PointCloud<pcl::PointXYZI>::Ptr converted_cloud ,const pcl::PointCloud<pcl::PointXYZI>& cloud){
@@ -90,15 +91,50 @@ std::vector<int> CurbDetector::angleFilter(const pcl::PointCloud<pcl::PointXYZI>
     return result_indicies;
 }
 
+pcl::PointCloud<pcl::PointXYZI>::Ptr CurbDetector::RANSACCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr cloud)
+{
+  // #################
+  //  RANSAC
+  // #################
+  pcl::PointCloud<pcl::PointXYZI>::Ptr inlier_points        (new pcl::PointCloud<pcl::PointXYZI>);
+  //pcl::PointCloud<pcl::PointXYZI>::Ptr inlier_points_neg    (new pcl::PointCloud<pcl::PointXYZI>);
 
+  // Object for Line fitting
+  pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
+  pcl::PointIndices::Ptr      inliers      (new pcl::PointIndices ());
 
-void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud){
+  pcl::SACSegmentation<pcl::PointXYZI> seg;
+  seg.setOptimizeCoefficients (true);       //(옵션) // Enable model coefficient refinement (optional).
+  seg.setInputCloud (cloud);                //입력 
+  seg.setModelType (pcl::SACMODEL_LINE);    //적용 모델  // Configure the object to look for a plane.
+  seg.setMethodType (pcl::SAC_RANSAC);      //적용 방법   // Use RANSAC method.
+  seg.setMaxIterations (1000);              //최대 실행 수
+  seg.setDistanceThreshold (0.1);          //inlier로 처리할 거리 정보   // Set the maximum allowed distance to the model.
+  //seg.setRadiusLimits(0, 0.1);            // cylinder경우, Set minimum and maximum radii of the cylinder.
+  seg.segment (*inliers, *coefficients);    //세그멘테이션 적용 
+  
+  pcl::copyPointCloud<pcl::PointXYZI> (*cloud, *inliers, *inlier_points);
+  pcl::ExtractIndices<pcl::PointXYZI> extract;
+  extract.setInputCloud (inlier_points);
+  extract.setIndices (inliers);
+  extract.setNegative (false);//false
+  extract.filter (*inlier_points);
+
+  return inlier_points;
+}
+
+void CurbDetector::cloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud){
     //Sorted point cloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);
     cloud_ptr->header = cloud.header;
     //Result point
     pcl::PointCloud<pcl::PointXYZI>::Ptr result_ptr(new pcl::PointCloud<pcl::PointXYZI>);
     result_ptr->header = cloud.header;
+
+    pcl::PointCloud<pcl::PointXYZI>::Ptr left_curb(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr right_curb(new pcl::PointCloud<pcl::PointXYZI>);
+    left_curb->header = cloud.header;
+    right_curb->header = cloud.header;
 
     //Set cloud size
     cloud_ptr->points.resize(number_of_channels*number_of_points);
@@ -114,6 +150,7 @@ void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud
 
     //Result container
     std::vector<std::vector<int>> result_indicies;
+    std::vector<int> conc_indicies;
 
     //Filter point cloud based on intensity values
     if(params::filterIntensity){
@@ -152,11 +189,19 @@ void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud
     if(result_indicies.empty()){
         condition_removal.setInputCloud(cloud_ptr);
         condition_removal.filter(*cloud_ptr);
-        result_ptr->points = cloud_ptr->points;
+        for(const auto& point:cloud_ptr->points){
+            if(point.y>=0)
+                left_curb->points.push_back(point);
+            else
+                right_curb->points.push_back(point);
+        }
+        //Publish results
+        left_lane.publish(left_curb);
+        right_lane.publish(right_curb);
     }else{
         if(result_indicies.size()==1){
             for(const auto& idx:result_indicies.front()){
-                result_ptr->points.push_back(cloud_ptr->points[idx]);
+                conc_indicies.push_back(idx);
             }
         }else if(result_indicies.size()==2){
             std::vector<int> intersection;
@@ -165,7 +210,7 @@ void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud
             else
                 std::set_intersection(result_indicies.front().begin(),result_indicies.front().end(),result_indicies.back().begin(),result_indicies.back().end(),std::back_inserter(intersection));
             for(const auto& idx:intersection){
-                result_ptr->points.push_back(cloud_ptr->points[idx]);
+                conc_indicies.push_back(idx);
             }
         }else if(result_indicies.size()==3){
             std::vector<int> temp;
@@ -178,7 +223,7 @@ void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud
                 std::set_intersection(temp.begin(),temp.end(),result_indicies[1].begin(),result_indicies[1].end(),std::back_inserter(intersection));
             }
             for(const auto& idx:intersection){
-                result_ptr->points.push_back(cloud_ptr->points[idx]);
+                conc_indicies.push_back(idx);
             }
         }else if(result_indicies.size()==4){
             std::vector<int> temp;
@@ -194,13 +239,30 @@ void CurbDetector::firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud
                 std::set_intersection(temp2.begin(),temp2.end(),result_indicies[2].begin(),result_indicies[2].end(),std::back_inserter(intersection));
             }
             for(const auto& idx:intersection){
-                result_ptr->points.push_back(cloud_ptr->points[idx]);
+                conc_indicies.push_back(idx);
             }
         }
-        condition_removal.setInputCloud(result_ptr);
-        condition_removal.filter(*result_ptr);
+        for(const auto& idx:conc_indicies){
+            if(cloud_ptr->points[idx].y>=0)
+                left_curb->points.push_back(cloud_ptr->points[idx]);
+            else
+                right_curb->points.push_back(cloud_ptr->points[idx]);
+        }
+        condition_removal.setInputCloud(left_curb);
+        condition_removal.filter(*left_curb);
+        condition_removal.setInputCloud(right_curb);
+        condition_removal.filter(*right_curb);
+        if(params::useRansac){
+            auto left = CurbDetector::RANSACCloud(left_curb);
+            auto right = CurbDetector::RANSACCloud(right_curb);
+            left->header = cloud.header;
+            right->header = cloud.header;
+            //Publish the results
+            left_lane.publish(left);
+            right_lane.publish(right);
+            return;
+        }
+        left_lane.publish(left_curb);
+        right_lane.publish(right_curb);
     }
-
-    //Publish the resulted points
-    pub_fpoints.publish(result_ptr);
 }

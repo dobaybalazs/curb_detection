@@ -9,11 +9,14 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/conditional_removal.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/extract_indices.h>
 
 //STL includes
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <string>
 
 
 //For pointcloud filtering
@@ -59,11 +62,14 @@ namespace params{
   extern bool filterAngle;
   extern double max_angle;
   extern double min_angle;
+  extern std::string input_cloud;
+  extern bool useRansac;
 };
 //Curb detector class
 class CurbDetector{
     ros::Subscriber sub_pcl;
-    ros::Publisher pub_fpoints;
+    ros::Publisher left_lane;
+    ros::Publisher right_lane;
 
     const size_t number_of_channels;
     const size_t number_of_points;
@@ -84,7 +90,9 @@ class CurbDetector{
 
     std::vector<int> angleFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr);
 
-    void firstCloudFilter(const pcl::PointCloud<pcl::PointXYZI>&);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr RANSACCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr);
+
+    void cloudFilter(const pcl::PointCloud<pcl::PointXYZI>&);
 
 
 };

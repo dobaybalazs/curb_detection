@@ -21,6 +21,8 @@ bool params::isUnion = false;
 bool params::filterAngle = false;
 double params::max_angle = 180.0;
 double params::min_angle = 0.0;
+std::string params::input_cloud = "/left_os1/os1_cloud_node/points";
+bool params::useRansac = false;
 
 void setParams(curb_test::curb_detectionConfig &config,uint32_t level){
     params::max_intensity_thres = config.max_intensity;
@@ -44,6 +46,8 @@ void setParams(curb_test::curb_detectionConfig &config,uint32_t level){
     params::filterAngle = config.filterAngle;
     params::max_angle = config.angle_max;
     params::min_angle = config.angle_min;
+    params::input_cloud = config.input_cloud;
+    params::useRansac = config.ransac_cloud;
 }
 
 
