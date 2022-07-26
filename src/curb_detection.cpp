@@ -109,8 +109,8 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr CurbDetector::RANSACCloud(const pcl::PointC
   seg.setModelType (pcl::SACMODEL_LINE);    //적용 모델  // Configure the object to look for a plane.
   seg.setMethodType (pcl::SAC_RANSAC);      //적용 방법   // Use RANSAC method.
   seg.setMaxIterations (1000);              //최대 실행 수
-  seg.setDistanceThreshold (0.1);          //inlier로 처리할 거리 정보   // Set the maximum allowed distance to the model.
-  //seg.setRadiusLimits(0, 0.1);            // cylinder경우, Set minimum and maximum radii of the cylinder.
+  seg.setDistanceThreshold (params::ransac_dist);          //inlier로 처리할 거리 정보   // Set the maximum allowed distance to the model.
+  seg.setRadiusLimits(params::rradius_min, params::rradius_max);            // cylinder경우, Set minimum and maximum radii of the cylinder.
   seg.segment (*inliers, *coefficients);    //세그멘테이션 적용 
   
   pcl::copyPointCloud<pcl::PointXYZI> (*cloud, *inliers, *inlier_points);
@@ -242,6 +242,28 @@ void CurbDetector::cloudFilter(const pcl::PointCloud<pcl::PointXYZI>& cloud){
                 conc_indicies.push_back(idx);
             }
         }
+        /*for(size_t i=0;i<number_of_channels;++i){
+            size_t min_idx=-1;
+            size_t max_idx=-1;
+            for(const auto& idx:conc_indicies){
+                if(idx/number_of_points==i){
+                    if(min_idx == -1 || max_idx == -1){
+                        min_idx = idx;
+                        max_idx = idx;
+                    }
+                    if(cloud_ptr->points[idx].y>=0){
+                        if(cloud_ptr->points[idx].y<cloud_ptr->points[min_idx].y)
+                            min_idx = idx;
+                    }else{
+                        if(cloud_ptr->points[idx].y>cloud_ptr->points[max_idx].y)
+                            max_idx = idx;
+                    }
+                        
+                }
+            }
+            left_curb->points.push_back(cloud_ptr->points[min_idx]);
+            right_curb->points.push_back(cloud_ptr->points[max_idx]);
+        }*/
         for(const auto& idx:conc_indicies){
             if(cloud_ptr->points[idx].y>=0)
                 left_curb->points.push_back(cloud_ptr->points[idx]);

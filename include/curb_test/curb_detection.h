@@ -64,6 +64,9 @@ namespace params{
   extern double min_angle;
   extern std::string input_cloud;
   extern bool useRansac;
+  extern double ransac_dist;
+  extern double rradius_min;
+  extern double rradius_max;
 };
 //Curb detector class
 class CurbDetector{

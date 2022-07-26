@@ -23,6 +23,9 @@ double params::max_angle = 180.0;
 double params::min_angle = 0.0;
 std::string params::input_cloud = "/left_os1/os1_cloud_node/points";
 bool params::useRansac = false;
+double params::ransac_dist=0.1;
+double params::rradius_min=0.0;
+double params::rradius_max=0.1;
 
 void setParams(curb_test::curb_detectionConfig &config,uint32_t level){
     params::max_intensity_thres = config.max_intensity;
@@ -48,6 +51,9 @@ void setParams(curb_test::curb_detectionConfig &config,uint32_t level){
     params::min_angle = config.angle_min;
     params::input_cloud = config.input_cloud;
     params::useRansac = config.ransac_cloud;
+    params::ransac_dist=config.rdistance_thres;
+    params::rradius_min=config.rradius_min;
+    params::rradius_max=config.rradius_max;
 }
 
 
