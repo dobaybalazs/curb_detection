@@ -1,6 +1,6 @@
 <launch>
-    <node name="curb_detection" pkg="curb_test" type="curb_detection" output="screen" />
-    <node pkg="rviz" type="rviz" name="rvizstart"  args="-d $(find curb_test)/rviz_views/rvizconfig.rviz" />
+    <node name="curb_detection" pkg="curb_detection" type="curb_detection" output="screen" />
+    <node pkg="rviz" type="rviz" name="rvizstart"  args="-d $(find curb_detection)/rviz_views/rvizconfig.rviz" />
     <node name="rqt_conf_gui" pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen"/>
     <include file="$(find nissan_bringup)/launch/3d_nissan.launch" />
 </launch>

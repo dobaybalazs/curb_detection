@@ -2,7 +2,7 @@
 //ROS includes
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
-#include "curb_test/curb_detectionConfig.h"
+#include "curb_detection/curb_detectionConfig.h"
 //PCL includes
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>

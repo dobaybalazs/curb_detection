@@ -1,4 +1,4 @@
-#include "curb_test/curb_detection.h"
+#include "curb_detection/curb_detection.h"
 
 int params::max_intensity_thres = 1000;
 int params::min_intensity_thres = 0;
@@ -27,7 +27,7 @@ double params::ransac_dist=0.1;
 double params::rradius_min=0.0;
 double params::rradius_max=0.1;
 
-void setParams(curb_test::curb_detectionConfig &config,uint32_t level){
+void setParams(curb_detection::curb_detectionConfig &config,uint32_t level){
     params::max_intensity_thres = config.max_intensity;
     params::min_intensity_thres = config.min_intensity;
     params::min_intensity_diff = config.min_intensity_diff;
@@ -61,8 +61,8 @@ int main(int argc,char** argv){
     ros::init(argc,argv,"curb_detection");
     ros::NodeHandle nh;
 
-    dynamic_reconfigure::Server<curb_test::curb_detectionConfig> server;
-    dynamic_reconfigure::Server<curb_test::curb_detectionConfig>::CallbackType f;
+    dynamic_reconfigure::Server<curb_detection::curb_detectionConfig> server;
+    dynamic_reconfigure::Server<curb_detection::curb_detectionConfig>::CallbackType f;
 
     f = boost::bind(&setParams,_1,_2);
     server.setCallback(f); 

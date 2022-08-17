@@ -1,7 +1,7 @@
-#include "curb_test/curb_detection.h"
+#include "curb_detection/curb_detection.h"
 
 
-CurbDetector::CurbDetector(ros::NodeHandle* nh):number_of_channels(64),number_of_points(512){
+CurbDetector::CurbDetector(ros::NodeHandle* nh):number_of_channels(128),number_of_points(512){
     sub_pcl = nh->subscribe(params::input_cloud,1,&CurbDetector::cloudFilter,this);
 
     left_lane = nh->advertise<pcl::PCLPointCloud2>("/left_points",1);
@@ -93,31 +93,27 @@ std::vector<int> CurbDetector::angleFilter(const pcl::PointCloud<pcl::PointXYZI>
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr CurbDetector::RANSACCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr cloud)
 {
-  // #################
-  //  RANSAC
-  // #################
   pcl::PointCloud<pcl::PointXYZI>::Ptr inlier_points        (new pcl::PointCloud<pcl::PointXYZI>);
-  //pcl::PointCloud<pcl::PointXYZI>::Ptr inlier_points_neg    (new pcl::PointCloud<pcl::PointXYZI>);
 
   // Object for Line fitting
   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
   pcl::PointIndices::Ptr      inliers      (new pcl::PointIndices ());
 
   pcl::SACSegmentation<pcl::PointXYZI> seg;
-  seg.setOptimizeCoefficients (true);       //(옵션) // Enable model coefficient refinement (optional).
-  seg.setInputCloud (cloud);                //입력 
-  seg.setModelType (pcl::SACMODEL_LINE);    //적용 모델  // Configure the object to look for a plane.
-  seg.setMethodType (pcl::SAC_RANSAC);      //적용 방법   // Use RANSAC method.
-  seg.setMaxIterations (1000);              //최대 실행 수
-  seg.setDistanceThreshold (params::ransac_dist);          //inlier로 처리할 거리 정보   // Set the maximum allowed distance to the model.
-  seg.setRadiusLimits(params::rradius_min, params::rradius_max);            // cylinder경우, Set minimum and maximum radii of the cylinder.
-  seg.segment (*inliers, *coefficients);    //세그멘테이션 적용 
+  seg.setOptimizeCoefficients (true);       
+  seg.setInputCloud (cloud);                
+  seg.setModelType (pcl::SACMODEL_LINE);    
+  seg.setMethodType (pcl::SAC_RANSAC);      
+  seg.setMaxIterations (1000);              
+  seg.setDistanceThreshold (params::ransac_dist);       
+  seg.setRadiusLimits(params::rradius_min, params::rradius_max);            
+  seg.segment (*inliers, *coefficients);    
   
   pcl::copyPointCloud<pcl::PointXYZI> (*cloud, *inliers, *inlier_points);
   pcl::ExtractIndices<pcl::PointXYZI> extract;
   extract.setInputCloud (inlier_points);
   extract.setIndices (inliers);
-  extract.setNegative (false);//false
+  extract.setNegative (false);
   extract.filter (*inlier_points);
 
   return inlier_points;
