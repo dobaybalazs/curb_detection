@@ -40,14 +40,18 @@ void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
     pcl::ExtractIndices<ouster_ros::Point> extract;
     std::unordered_set<int> indices;
     for(size_t i=0;i<number_of_channels;++i){
-        float max_diff_z=0,max_int=0,max_refl=0,max_rang=0,max_amb=0,max_dist=0,max_angle=0;
+        float max_diff_z=0,max_int=0,max_dist=0,max_angle=0,max_refl=0,max_amb=0;
+        u_int32_t max_rang=0;
         for(size_t j=1;j<number_of_points-1;++j){
             float current_z_diff = std::fabs(cloud->points[i*number_of_points+j].z-cloud->points[i*number_of_points+j-1].z);
             max_diff_z = std::max(max_diff_z,current_z_diff);
-            max_int = std::max(max_int,cloud->points[i*number_of_points+j].intensity);
-            max_refl = std::max(max_refl,static_cast<float>(cloud->points[i*number_of_points+j].reflectivity));
-            max_rang = std::max(max_rang,static_cast<float>(cloud->points[i*number_of_points+j].range));
-            max_amb = std::max(max_amb,static_cast<float>(cloud->points[i*number_of_points+j].ambient));
+            float current_int_diff = std::fabs(cloud->points[i*number_of_points+j+1].intensity - cloud->points[i*number_of_points+j].intensity);
+            max_int = std::max(max_int,current_int_diff);
+            float current_refl_diff = std::fabs(cloud->points[i*number_of_points+j+1].reflectivity - cloud->points[i*number_of_points+j].reflectivity);
+            max_refl = std::max(max_refl,current_refl_diff);
+            max_rang = std::max(max_rang,cloud->points[i*number_of_points+j].range);
+            float current_amb_diff = std::fabs(cloud->points[i*number_of_points+j+1].ambient - cloud->points[i*number_of_points+j].ambient);
+            max_amb = std::max(max_amb,current_amb_diff);
             float current_dist = std::sqrt(std::pow(cloud->points[i*number_of_points+j].x,2)+std::pow(cloud->points[i*number_of_points+j].y,2));
             max_dist = std::max(max_dist,current_dist);
             float x1 = cloud->points[i*number_of_points+j-1].x - cloud->points[i*number_of_points+j].x;
@@ -61,28 +65,28 @@ void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
         }
         for(size_t j=1;j<number_of_points-1;++j){
             if(params::filter_a){
-                double amb_val = static_cast<float>(cloud->points[i*number_of_points+j].ambient)*params::mult_a;
+                float amb_val = std::abs(cloud->points[i*number_of_points+j+1].ambient*params::mult_a - cloud->points[i*number_of_points+j].ambient*params::mult_a);
                 if(amb_val>max_amb*params::min_a && amb_val<max_amb*params::max_a){
                     indices.insert(i*number_of_points+j);
                     indices.insert(i*number_of_points+j+1);
                 }
             }
             if(params::filter_i){
-                double int_val = cloud->points[i*number_of_points+j].intensity*params::mult_i;
+                float int_val = std::fabs(cloud->points[i*number_of_points+j+1].intensity*params::mult_i - cloud->points[i*number_of_points+j].intensity*params::mult_i);
                 if(int_val>max_int*params::min_i && int_val<max_int*params::max_i){
                     indices.insert(i*number_of_points+j);
                     indices.insert(i*number_of_points+j+1);
                 }
             }
             if(params::filter_ra){
-                double range_val = static_cast<float>(cloud->points[i*number_of_points+j].range)*params::mult_ra;
+                float range_val = static_cast<float>(cloud->points[i*number_of_points+j].range)*params::mult_ra;
                 if(range_val>max_rang*params::min_ra && range_val<max_rang*params::max_ra){
                     indices.insert(i*number_of_points+j);
                     indices.insert(i*number_of_points+j+1);
                 }
             }
             if(params::filter_re){
-                double ref_val = static_cast<float>(cloud->points[i*number_of_points+j].reflectivity)*params::mult_re;
+                float ref_val = std::abs(cloud->points[i*number_of_points+j+1].reflectivity*params::mult_re - cloud->points[i*number_of_points+j].reflectivity*params::mult_re);
                 if(ref_val>max_refl*params::min_re && ref_val<max_refl*params::max_re){
                     indices.insert(i*number_of_points+j);
                     indices.insert(i*number_of_points+j+1);
@@ -101,7 +105,7 @@ void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
             for(size_t j=wd;j<number_of_points-wd;++j){
                 double dist_prev = std::sqrt(std::pow(cloud->points[i*number_of_points+j-wd].x,2)+std::pow(cloud->points[i*number_of_points+j-wd].y,2))*params::mult_dist;
                 double dist_next = std::sqrt(std::pow(cloud->points[i*number_of_points+j+wd].x,2)+std::pow(cloud->points[i*number_of_points+j+wd].y,2))*params::mult_dist;
-                double dist_val = std::fabs(dist_prev-dist_next);
+                double dist_val = std::fabs(dist_prev-dist_next)*params::mult_dist;
                 if(dist_val>max_dist*params::min_dist && dist_val<max_dist*params::max_dist){
                     indices.insert(i*number_of_points+j);
                     indices.insert(i*number_of_points+j+1);
@@ -117,7 +121,7 @@ void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
                 double y2 = cloud->points[i*number_of_points+j+wd].y - cloud->points[i*number_of_points+j].y;
                 double dot_prod = x1*x2+y1*y2;
                 double det = x1*y2-y1*x2;
-                double angle_val = atan2(det,dot_prod);
+                double angle_val = atan2(det,dot_prod)*params::mult_angle;
                 if(angle_val>max_angle*params::min_angle && angle_val<max_angle*params::max_angle){
                     indices.insert(i*number_of_points+j);
                     indices.insert(i*number_of_points+j+1);
