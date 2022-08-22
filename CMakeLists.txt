@@ -2,21 +2,18 @@ cmake_minimum_required(VERSION 3.0.2)
 project(curb_detection)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++17 -Ofast)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
+  dynamic_reconfigure
+  ouster_ros
   pcl_ros
   roscpp
   rospy
-  sensor_msgs
   std_msgs
-  visualization_msgs
-  dynamic_reconfigure
-  ouster_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -76,7 +73,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   sensor_msgs#   std_msgs#   visualization_msgs
+#   std_msgs
 # )
 
 ################################################
@@ -94,12 +91,9 @@ find_package(catkin REQUIRED COMPONENTS
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
 generate_dynamic_reconfigure_options(
-   cfg/curb.cfg
+   cfg/curbDetector.cfg
+#   cfg/DynReconf2.cfg
 )
 
 ###################################
@@ -112,9 +106,9 @@ generate_dynamic_reconfigure_options(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
-   LIBRARIES curb_detection
-#  CATKIN_DEPENDS geometry_msgs pcl_ros roscpp rospy sensor_msgs std_msgs visualization_msgs
+  INCLUDE_DIRS include
+  LIBRARIES curb_detection
+#  CATKIN_DEPENDS ouster_ros pcl_ros roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
@@ -213,7 +207,6 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-add_executable(curb_detection src/main.cpp src/curb_detection.cpp)
-target_link_libraries(curb_detection ${catkin_LIBRARIES})
-add_dependencies(curb_detection ${PROJECT_NAME}_gencfg)
+add_executable(curb_detector src/main.cpp src/curb_detector.cpp)
+target_link_libraries(curb_detector ${catkin_LIBRARIES})
+#add_dependencies(curb_detector ${PROJECT_NAME}_gencfg)
