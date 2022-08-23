@@ -7,6 +7,7 @@ bool params::filter_ra=false;
 bool params::filter_z=false;
 bool params::filter_dist=false;
 bool params::filter_angle=false;
+bool params::filter_ransac=false;
 float params::mult_a=1.0;
 float params::mult_i=1.0;
 float params::mult_ra=1.0;
@@ -34,17 +35,22 @@ float params::min_z = -1.8;
 float params::max_x = 50.0;
 float params::max_y = 12.0;
 float params::max_z = -0.8;
+float params::ransac_dist = 0.01;
+float params::rradius_max = 1.0;
+float params::rradius_min = 0.0;
 int params::angle_wd_size = 5;
 int params::dist_wd_size = 1;
+float params::min_rad = 2.0;
 
 void setParams(curb_detection::curb_detectionConfig &config,uint32_t level){
-    params::filter_a= config.filter_a;
-    params::filter_i= config.filter_i;
-    params::filter_re= config.filter_re;
-    params::filter_ra= config.filter_ra;
-    params::filter_z= config.filter_z;
-    params::filter_dist= config.filter_dist;
-    params::filter_angle= config.filter_angle;
+    params::filter_a = config.filter_a;
+    params::filter_i = config.filter_i;
+    params::filter_re = config.filter_re;
+    params::filter_ra = config.filter_ra;
+    params::filter_z = config.filter_z;
+    params::filter_dist = config.filter_dist;
+    params::filter_angle = config.filter_angle;
+    params::filter_ransac = config.filter_ransac;
     params::max_x = config.max_x;
     params::min_x = config.min_x;
     params::max_y = config.max_y;
@@ -74,6 +80,10 @@ void setParams(curb_detection::curb_detectionConfig &config,uint32_t level){
     params::max_dist = config.max_dist;
     params::angle_wd_size = config.angle_wd_size;
     params::dist_wd_size = config.dist_wd_size;
+    params::ransac_dist = config.ransac_dist;
+    params::rradius_max = config.rradius_max;
+    params::rradius_min = config.rradius_min;
+    params::min_rad = config.min_rad;
 }
 
 int main(int argc,char** argv){

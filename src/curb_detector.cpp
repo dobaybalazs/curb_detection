@@ -8,7 +8,8 @@ CurbDetector::CurbDetector(ros::NodeHandlePtr nh):number_of_channels(64),number_
        
     sub = nh->subscribe(input_topic,1,&CurbDetector::callBack,this);
 
-    pub = nh->advertise<pcl::PCLPointCloud2>("/output",1);
+    pub_right = nh->advertise<pcl::PCLPointCloud2>("/left_points",1);
+    pub_left = nh->advertise<pcl::PCLPointCloud2>("/right_points",1);
 }
 
 void CurbDetector::sortPoints(pcl::PointCloud<ouster_ros::Point>::Ptr converted_cloud,const pcl::PointCloud<ouster_ros::Point>::ConstPtr cloud){
@@ -32,6 +33,29 @@ void CurbDetector::sortPoints(pcl::PointCloud<ouster_ros::Point>::Ptr converted_
         idx++;
         }
     }
+}
+
+void CurbDetector::RANSACCloud(pcl::PointCloud<ouster_ros::Point>::Ptr cloud)
+{
+    // Object for Line fitting
+    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
+    pcl::PointIndices::Ptr      inliers      (new pcl::PointIndices ());
+
+    pcl::SACSegmentation<ouster_ros::Point> seg;
+    seg.setOptimizeCoefficients (true);       
+    seg.setInputCloud (cloud);                
+    seg.setModelType (pcl::SACMODEL_LINE);    
+    seg.setMethodType (pcl::SAC_RANSAC);      
+    seg.setMaxIterations (1000);              
+    seg.setDistanceThreshold (params::ransac_dist);       
+    seg.setRadiusLimits(params::rradius_min, params::rradius_max);            
+    seg.segment (*inliers, *coefficients);    
+    
+    pcl::ExtractIndices<ouster_ros::Point> extract;
+
+    extract.setIndices (inliers);
+    extract.setNegative (false);
+    extract.filterDirectly(cloud);
 }
 
 void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
@@ -157,8 +181,9 @@ void CurbDetector::boxFilter(const pcl::PointCloud<ouster_ros::Point>::ConstPtr 
 void CurbDetector::callBack(const pcl::PointCloud<ouster_ros::Point>::ConstPtr cloud){
     pcl::PointCloud<ouster_ros::Point>::Ptr temp(new pcl::PointCloud<ouster_ros::Point>());
     pcl::PointCloud<ouster_ros::Point>::Ptr result(new pcl::PointCloud<ouster_ros::Point>());
+    pcl::PointCloud<ouster_ros::Point>::Ptr right(new pcl::PointCloud<ouster_ros::Point>());
+    pcl::PointCloud<ouster_ros::Point>::Ptr left(new pcl::PointCloud<ouster_ros::Point>());
 
-    temp->header = cloud->header;
     temp->points.resize(number_of_channels*number_of_points);
     //Sort cloud_points
     CurbDetector::sortPoints(temp,cloud);
@@ -166,6 +191,22 @@ void CurbDetector::callBack(const pcl::PointCloud<ouster_ros::Point>::ConstPtr c
     CurbDetector::limitFilter(temp);
     //Filter cloud based on x,y and z values
     CurbDetector::boxFilter(temp,result);
-    result->header = cloud->header;
-    pub.publish(result);
+    //Seperate cloud
+    for(const auto& point:result->points){
+        if(std::sqrt(std::pow(point.x,2)+std::pow(point.y,2))>params::min_rad){
+            if(point.y>=0){
+                left->points.push_back(point);
+            }else{
+                right->points.push_back(point);
+            }
+        }
+    }
+    left->header = cloud->header;
+    right->header = cloud->header;
+    if(params::filter_ransac){
+        CurbDetector::RANSACCloud(left);
+        CurbDetector::RANSACCloud(right);
+    }
+    pub_left.publish(left);
+    pub_right.publish(right);
 }
