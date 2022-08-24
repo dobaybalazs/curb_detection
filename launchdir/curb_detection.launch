@@ -1,6 +1,6 @@
 <launch>
     <node name="curb_detector" pkg="curb_detection" type="curb_detector" output="screen" />
-    <node name="fit_model" pkg="curb_detection" type="fit_model.py" output="screen" />
+    <node name="fit_model" pkg="curb_detection" type="fit_model.py" output="screen"/>
     <param name="input_topic" type="string" value="/left_os1/os1_cloud_node/points" />
     <param name="point_number" type="int" value="512" />
     <param name="channel_number" type="int" value="64" />

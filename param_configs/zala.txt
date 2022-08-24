@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-PACKAGE = "curb_detection"
-
-from dynamic_reconfigure.parameter_generator_catkin import *
-
-gen=ParameterGenerator()
 gen.add('useBoxFilter',bool_t,0,"Should boxfilter be used",True)
 gen.add('max_x',double_t,0,"Max_x",25.0,-50.0,50.0)
 gen.add('min_x',double_t,0,"Min_x",-8.0,-50.0,50.0)
@@ -30,8 +24,8 @@ gen.add('max_re',double_t,0,"Reflectivity max limit [%]",1.0,0.0,1.0)
 gen.add('min_re',double_t,0,"Reflectivity min limit [%]",0.36,0.0,1.0)
 gen.add('filter_z',bool_t,0,"Filter Z values",False)
 gen.add('mult_z',double_t,0,"Z_multiplier",1.0,0.0,2.0)
-gen.add('max_zd',double_t,0,"Z max limit m",0.1,0.0,2.0)
-gen.add('min_zd',double_t,0,"Z min limit m",0.04,0.0,2.0)
+gen.add('max_zd',double_t,0,"Z max limit [%]",0.1,0.0,1.0)
+gen.add('min_zd',double_t,0,"Z min limit [%]",0.02,0.0,1.0)
 gen.add('filter_angle',bool_t,0,"Filter angle values",False)
 gen.add('mult_angle',double_t,0,"angle_multiplier",1.0,0.0,2.0)
 gen.add('angle_wd_size',int_t,0,"Angle window size",6,1,20)
@@ -46,5 +40,3 @@ gen.add('filter_ransac',bool_t,0,"Should RANSac be used",False)
 gen.add('ransac_dist',double_t,0,"RANSac distance threshold",0.2,0.0,3.0)
 gen.add('rradius_min',double_t,0,"RANSac radius min threshold",0.00,0.0,1.0)
 gen.add('rradius_max',double_t,0,"RANSac radius max threshold",1.0,0.0,1.0)
-
-exit(gen.generate(PACKAGE, "curb_detection", "curb_detection"))

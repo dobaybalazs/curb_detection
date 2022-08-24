@@ -8,6 +8,7 @@ bool params::filter_z=false;
 bool params::filter_dist=false;
 bool params::filter_angle=false;
 bool params::filter_ransac=false;
+bool params::useBoxFilter=false;
 float params::mult_a=1.0;
 float params::mult_i=1.0;
 float params::mult_ra=1.0;
@@ -51,6 +52,7 @@ void setParams(curb_detection::curb_detectionConfig &config,uint32_t level){
     params::filter_dist = config.filter_dist;
     params::filter_angle = config.filter_angle;
     params::filter_ransac = config.filter_ransac;
+    params::useBoxFilter = config.useBoxFilter;
     params::max_x = config.max_x;
     params::min_x = config.min_x;
     params::max_y = config.max_y;

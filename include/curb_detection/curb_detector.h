@@ -26,7 +26,7 @@
 #include <string>
 
 namespace params{
-    extern bool filter_a,filter_i,filter_re,filter_ra,filter_z,filter_dist,filter_angle, filter_ransac;
+    extern bool filter_a,filter_i,filter_re,filter_ra,filter_z,filter_dist,filter_angle, filter_ransac, useBoxFilter;
     extern float mult_a,mult_i,mult_ra,mult_re,mult_z,mult_angle,mult_dist;
     extern float min_a,min_i,min_ra,min_re,min_zd,min_angle,min_dist;
     extern float max_a,max_i,max_ra,max_re,max_zd,max_angle,max_dist;

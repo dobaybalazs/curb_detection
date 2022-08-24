@@ -1,7 +1,7 @@
 #include "curb_detection/curb_detector.h"
 
 
-CurbDetector::CurbDetector(ros::NodeHandlePtr nh):number_of_channels(64),number_of_points(512),input_topic("/left_os1/os1_cloud_node/points"){
+CurbDetector::CurbDetector(ros::NodeHandlePtr nh){
     nh->getParam("point_number",number_of_points);
     nh->getParam("channel_number",number_of_channels);
     nh->getParam("input_topic",input_topic);
@@ -64,11 +64,11 @@ void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
     pcl::ExtractIndices<ouster_ros::Point> extract;
     std::unordered_set<int> indices;
     for(size_t i=0;i<number_of_channels;++i){
-        float max_diff_z=0,max_int=0,max_dist=0,max_angle=0,max_refl=0,max_amb=0;
+        float max_int=0,max_dist=0,max_angle=0,max_refl=0,max_amb=0;
         u_int32_t max_rang=0;
         for(size_t j=1;j<number_of_points-1;++j){
-            float current_z_diff = std::fabs(cloud->points[i*number_of_points+j].z-cloud->points[i*number_of_points+j-1].z);
-            max_diff_z = std::max(max_diff_z,current_z_diff);
+            // float current_z_diff = std::fabs(cloud->points[i*number_of_points+j].z-cloud->points[i*number_of_points+j-1].z);
+            // max_diff_z = std::max(max_diff_z,current_z_diff);
             float current_int_diff = std::fabs(cloud->points[i*number_of_points+j+1].intensity - cloud->points[i*number_of_points+j].intensity);
             max_int = std::max(max_int,current_int_diff);
             float current_refl_diff = std::fabs(cloud->points[i*number_of_points+j+1].reflectivity - cloud->points[i*number_of_points+j].reflectivity);
@@ -117,8 +117,8 @@ void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
                 }
             }
             if(params::filter_z){
-                double zdiff_val = std::fabs(cloud->points[i*number_of_points+j].z-cloud->points[i*number_of_points+j-1].z);
-                if(zdiff_val>max_diff_z*params::min_zd && zdiff_val<max_diff_z*params::max_zd){
+                double zdiff_val = std::fabs(cloud->points[i*number_of_points+j].z-cloud->points[i*number_of_points+j+1].z);
+                if(zdiff_val>params::min_zd && zdiff_val<params::max_zd){
                     indices.insert(i*number_of_points+j);
                     indices.insert(i*number_of_points+j+1);
                 }
@@ -190,7 +190,11 @@ void CurbDetector::callBack(const pcl::PointCloud<ouster_ros::Point>::ConstPtr c
     //Filter cloud based on certain characteristics
     CurbDetector::limitFilter(temp);
     //Filter cloud based on x,y and z values
-    CurbDetector::boxFilter(temp,result);
+    if(params::useBoxFilter)
+        CurbDetector::boxFilter(temp,result);
+    else{
+        result->points = temp->points;
+    }
     //Seperate cloud
     for(const auto& point:result->points){
         if(std::sqrt(std::pow(point.x,2)+std::pow(point.y,2))>params::min_rad){
