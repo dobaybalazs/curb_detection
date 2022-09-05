@@ -8,7 +8,7 @@
 
 #include "curb_detection/curb_detectionConfig.h"
 //ouster
-#include <ouster_ros/point.h>
+#include "./point.h"
 //pcl
 #include <pcl/point_cloud.h>
 #include <pcl_ros/point_cloud.h>
@@ -50,13 +50,13 @@ class CurbDetector{
     public:
     CurbDetector(ros::NodeHandlePtr);
 
-    void RANSACCloud(pcl::PointCloud<ouster_ros::Point>::Ptr);
+    void RANSACCloud(pcl::PointCloud<ouster::Point>::Ptr);
 
-    void sortPoints(pcl::PointCloud<ouster_ros::Point>::Ptr,const pcl::PointCloud<ouster_ros::Point>::ConstPtr);
+    void sortPoints(pcl::PointCloud<ouster::Point>::Ptr,const pcl::PointCloud<ouster::Point>::ConstPtr);
 
-    void limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr);
+    void limitFilter(pcl::PointCloud<ouster::Point>::Ptr);
 
-    void boxFilter(const pcl::PointCloud<ouster_ros::Point>::ConstPtr,pcl::PointCloud<ouster_ros::Point>::Ptr);
+    void boxFilter(const pcl::PointCloud<ouster::Point>::ConstPtr,pcl::PointCloud<ouster::Point>::Ptr);
 
-    void callBack(const pcl::PointCloud<ouster_ros::Point>::ConstPtr);
+    void callBack(const pcl::PointCloud<ouster::Point>::ConstPtr);
 };

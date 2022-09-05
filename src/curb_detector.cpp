@@ -12,7 +12,7 @@ CurbDetector::CurbDetector(ros::NodeHandlePtr nh){
     pub_left = nh->advertise<pcl::PCLPointCloud2>("/right_points",1);
 }
 
-void CurbDetector::sortPoints(pcl::PointCloud<ouster_ros::Point>::Ptr converted_cloud,const pcl::PointCloud<ouster_ros::Point>::ConstPtr cloud){
+void CurbDetector::sortPoints(pcl::PointCloud<ouster::Point>::Ptr converted_cloud,const pcl::PointCloud<ouster::Point>::ConstPtr cloud){
     int idx = 0;
     int cur_channel = 0;
 
@@ -35,13 +35,13 @@ void CurbDetector::sortPoints(pcl::PointCloud<ouster_ros::Point>::Ptr converted_
     }
 }
 
-void CurbDetector::RANSACCloud(pcl::PointCloud<ouster_ros::Point>::Ptr cloud)
+void CurbDetector::RANSACCloud(pcl::PointCloud<ouster::Point>::Ptr cloud)
 {
     // Object for Line fitting
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
     pcl::PointIndices::Ptr      inliers      (new pcl::PointIndices ());
 
-    pcl::SACSegmentation<ouster_ros::Point> seg;
+    pcl::SACSegmentation<ouster::Point> seg;
     seg.setOptimizeCoefficients (true);       
     seg.setInputCloud (cloud);                
     seg.setModelType (pcl::SACMODEL_LINE);    
@@ -51,17 +51,17 @@ void CurbDetector::RANSACCloud(pcl::PointCloud<ouster_ros::Point>::Ptr cloud)
     seg.setRadiusLimits(params::rradius_min, params::rradius_max);            
     seg.segment (*inliers, *coefficients);    
     
-    pcl::ExtractIndices<ouster_ros::Point> extract;
+    pcl::ExtractIndices<ouster::Point> extract;
 
     extract.setIndices (inliers);
     extract.setNegative (false);
     extract.filterDirectly(cloud);
 }
 
-void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
+void CurbDetector::limitFilter(pcl::PointCloud<ouster::Point>::Ptr cloud){
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices ());
 
-    pcl::ExtractIndices<ouster_ros::Point> extract;
+    pcl::ExtractIndices<ouster::Point> extract;
     std::unordered_set<int> indices;
     for(size_t i=0;i<number_of_channels;++i){
         float max_int=0,max_dist=0,max_angle=0,max_refl=0,max_amb=0;
@@ -160,9 +160,9 @@ void CurbDetector::limitFilter(pcl::PointCloud<ouster_ros::Point>::Ptr cloud){
     }
 }
 
-void CurbDetector::boxFilter(const pcl::PointCloud<ouster_ros::Point>::ConstPtr input_cloud,pcl::PointCloud<ouster_ros::Point>::Ptr output_cloud){
+void CurbDetector::boxFilter(const pcl::PointCloud<ouster::Point>::ConstPtr input_cloud,pcl::PointCloud<ouster::Point>::Ptr output_cloud){
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices ());
-    pcl::CropBox<ouster_ros::Point> roi(true);
+    pcl::CropBox<ouster::Point> roi(true);
 
     Eigen::Vector4f min(params::min_x,params::min_y,params::min_z,0.0);
     Eigen::Vector4f max(params::max_x,params::max_y,params::max_z,0.0);
@@ -172,17 +172,17 @@ void CurbDetector::boxFilter(const pcl::PointCloud<ouster_ros::Point>::ConstPtr 
     roi.setInputCloud(input_cloud);
     roi.filter(inliers->indices);
 
-    pcl::ExtractIndices<ouster_ros::Point> extract;
+    pcl::ExtractIndices<ouster::Point> extract;
     extract.setIndices(inliers);
     extract.setInputCloud(input_cloud);
     extract.filter(*output_cloud);
 }
 
-void CurbDetector::callBack(const pcl::PointCloud<ouster_ros::Point>::ConstPtr cloud){
-    pcl::PointCloud<ouster_ros::Point>::Ptr temp(new pcl::PointCloud<ouster_ros::Point>());
-    pcl::PointCloud<ouster_ros::Point>::Ptr result(new pcl::PointCloud<ouster_ros::Point>());
-    pcl::PointCloud<ouster_ros::Point>::Ptr right(new pcl::PointCloud<ouster_ros::Point>());
-    pcl::PointCloud<ouster_ros::Point>::Ptr left(new pcl::PointCloud<ouster_ros::Point>());
+void CurbDetector::callBack(const pcl::PointCloud<ouster::Point>::ConstPtr cloud){
+    pcl::PointCloud<ouster::Point>::Ptr temp(new pcl::PointCloud<ouster::Point>());
+    pcl::PointCloud<ouster::Point>::Ptr result(new pcl::PointCloud<ouster::Point>());
+    pcl::PointCloud<ouster::Point>::Ptr right(new pcl::PointCloud<ouster::Point>());
+    pcl::PointCloud<ouster::Point>::Ptr left(new pcl::PointCloud<ouster::Point>());
 
     temp->points.resize(number_of_channels*number_of_points);
     //Sort cloud_points
