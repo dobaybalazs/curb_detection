@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import rospy 
 import numpy as np
-from scipy.optimize import curve_fit
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2, PointCloud
 import sensor_msgs.point_cloud2 as pc2
