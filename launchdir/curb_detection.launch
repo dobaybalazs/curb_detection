@@ -1,6 +1,10 @@
 <launch>
-    <node name="curb_detection" pkg="curb_detection" type="curb_detection" output="screen" />
-    <node pkg="rviz" type="rviz" name="rvizstart"  args="-d $(find curb_detection)/rviz_views/rvizconfig.rviz" />
+    <node name="curb_detector" pkg="curb_detection" type="curb_detector" output="screen" />
+    <!--node name="fit_model" pkg="curb_detection" type="fit_model.py" output="screen" -->
+    <param name="input_topic" type="string" value="/os_cloud_node/points" />
+    <param name="point_number" type="int" value="2048" />
+    <param name="channel_number" type="int" value="128" />
+    <param name="frame_id" type="string" value="/base_link" />
+    <node pkg="rviz" type="rviz" name="rvizstart"  args="-d $(find curb_detection)/rviz_views/config.rviz"/>
     <node name="rqt_conf_gui" pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen"/>
-    <include file="$(find nissan_bringup)/launch/3d_nissan.launch" />
 </launch>
