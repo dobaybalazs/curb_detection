@@ -2,7 +2,7 @@
 
 <img src="img/reflectivity.gif" height=658/> 
 <br>
-<img src="img/smart_city-dist-amb-int.png" height=300/> <img src="img/varosi-amb-ran-refl.png" height=300/> <img src="img/zala-egyetem-refl-amb-int.png" height=300/> 
+<p><img src="img/smart_city-dist-amb-int.png" height=300/> <img src="img/varosi-amb-ran-refl.png" height=300/> <img src="img/zala-egyetem-refl-amb-int.png" height=300/></p>
 
 # Dependency
 
