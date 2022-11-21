@@ -1,5 +1,6 @@
 #include "curb_detection/curb_detector.h"
 
+//Setting default values for parameters
 bool params::filter_a=false;
 bool params::filter_i=false;
 bool params::filter_re=false;
@@ -43,6 +44,7 @@ int params::angle_wd_size = 5;
 int params::dist_wd_size = 1;
 float params::min_rad = 2.0;
 
+//Setting parameter values using the server
 void setParams(curb_detection::curb_detectionConfig &config,uint32_t level){
     params::filter_a = config.filter_a;
     params::filter_i = config.filter_i;
@@ -92,14 +94,15 @@ int main(int argc,char** argv){
     ros::init(argc,argv,"curb_detection_node");
     ros::NodeHandlePtr nh = boost::make_shared<ros::NodeHandle>();
 
+    //Setting up the paramter server
     dynamic_reconfigure::Server<curb_detection::curb_detectionConfig> server;
     dynamic_reconfigure::Server<curb_detection::curb_detectionConfig>::CallbackType f;
 
     f = boost::bind(&setParams,_1,_2);
     server.setCallback(f); 
 
+    //Creating the curb detection instance
     CurbDetector cd(nh);
-
 
     ros::spin();
 }

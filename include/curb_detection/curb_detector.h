@@ -25,6 +25,7 @@
 #include <unordered_set>
 #include <string>
 
+//Namespace for parameters set using the reconfigure server
 namespace params{
     extern bool filter_a,filter_i,filter_re,filter_ra,filter_z,filter_dist,filter_angle, filter_ransac, useBoxFilter;
     extern float mult_a,mult_i,mult_ra,mult_re,mult_z,mult_angle,mult_dist;
@@ -37,6 +38,7 @@ namespace params{
     extern float ransac_dist,rradius_min,rradius_max;
 };
 
+//A class containing every function and data needed for the task
 class CurbDetector{
     
     ros::Subscriber sub;
@@ -51,8 +53,6 @@ class CurbDetector{
     CurbDetector(ros::NodeHandlePtr);
 
     void RANSACCloud(pcl::PointCloud<ouster::Point>::Ptr);
-
-    void sortPoints(pcl::PointCloud<ouster::Point>::Ptr,const pcl::PointCloud<ouster::Point>::ConstPtr);
 
     void limitFilter(const pcl::PointCloud<ouster::Point>::ConstPtr,pcl::PointCloud<ouster::Point>::Ptr,pcl::PointCloud<ouster::Point>::Ptr);
 

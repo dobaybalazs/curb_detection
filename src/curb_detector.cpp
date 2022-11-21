@@ -1,6 +1,6 @@
 #include "curb_detection/curb_detector.h"
 
-
+//Setting default values for params
 CurbDetector::CurbDetector(ros::NodeHandlePtr nh){
     nh->getParam("point_number",number_of_points);
     nh->getParam("channel_number",number_of_channels);
@@ -12,32 +12,9 @@ CurbDetector::CurbDetector(ros::NodeHandlePtr nh){
     pub_left = nh->advertise<pcl::PCLPointCloud2>("/right_points",1);
 }
 
-void CurbDetector::sortPoints(pcl::PointCloud<ouster::Point>::Ptr converted_cloud,const pcl::PointCloud<ouster::Point>::ConstPtr cloud){
-    int idx = 0;
-    int cur_channel = 0;
-
-    for(int i = number_of_channels*number_of_points - 1; i >= 0; i--)
-    {
-        if ((i + 1) % number_of_points == 0)
-            cur_channel++;
-
-        if (cur_channel <= number_of_channels)
-        {
-        converted_cloud->points[idx].x = cloud->points[i].x;
-        converted_cloud->points[idx].y = cloud->points[i].y;
-        converted_cloud->points[idx].z = cloud->points[i].z;
-        converted_cloud->points[idx].intensity = cloud->points[i].intensity;
-        converted_cloud->points[idx].ambient = cloud->points[i].ambient;
-        converted_cloud->points[idx].reflectivity = cloud->points[i].reflectivity;
-        converted_cloud->points[idx].range = cloud->points[i].range;
-        idx++;
-        }
-    }
-}
-
+//Function for noise filtering using RANSAC
 void CurbDetector::RANSACCloud(pcl::PointCloud<ouster::Point>::Ptr cloud)
 {
-    // Object for Line fitting
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
     pcl::PointIndices::Ptr      inliers      (new pcl::PointIndices ());
 
@@ -58,16 +35,17 @@ void CurbDetector::RANSACCloud(pcl::PointCloud<ouster::Point>::Ptr cloud)
     extract.filterDirectly(cloud);
 }
 
+//Sorting condition ascending order
 bool comp_up(const ouster::Point &a, const ouster::Point &b)
 {
     return a.y < b.y;
 }
-
+//Sorting condition descending order
 bool comp_down(const ouster::Point &a, const ouster::Point &b)
 {
     return a.y > b.y;
 }
-
+//Function for filtering based on threshold values
 void filterPoints(pcl::PointCloud<ouster::Point>::Ptr cloud,const std::unordered_map<std::string,float>& limits,pcl::PointCloud<ouster::Point>::Ptr output){
     bool f_a = true;
     bool f_i = true;
@@ -155,7 +133,7 @@ void filterPoints(pcl::PointCloud<ouster::Point>::Ptr cloud,const std::unordered
         }
     }
 }
-
+//Function for setting the threshold values
 void CurbDetector::limitFilter(const pcl::PointCloud<ouster::Point>::ConstPtr cloud,pcl::PointCloud<ouster::Point>::Ptr left,pcl::PointCloud<ouster::Point>::Ptr right){
     for(size_t i=0;i<number_of_channels;++i){
         std::unordered_map<std::string,float> limit_map;
@@ -222,7 +200,7 @@ void CurbDetector::limitFilter(const pcl::PointCloud<ouster::Point>::ConstPtr cl
         filterPoints(pc_right,limit_map,right);
     }
 }
-
+//function for box-filtering the cloud
 void CurbDetector::boxFilter(const pcl::PointCloud<ouster::Point>::ConstPtr input_cloud,pcl::PointCloud<ouster::Point>::Ptr output_cloud){
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices ());
     pcl::CropBox<ouster::Point> roi(true);
@@ -240,7 +218,7 @@ void CurbDetector::boxFilter(const pcl::PointCloud<ouster::Point>::ConstPtr inpu
     extract.setInputCloud(input_cloud);
     extract.filter(*output_cloud);
 }
-
+//input data callback
 void CurbDetector::callBack(const pcl::PointCloud<ouster::Point>::ConstPtr cloud){
     pcl::PointCloud<ouster::Point>::Ptr right(new pcl::PointCloud<ouster::Point>());
     pcl::PointCloud<ouster::Point>::Ptr left(new pcl::PointCloud<ouster::Point>());
@@ -259,6 +237,7 @@ void CurbDetector::callBack(const pcl::PointCloud<ouster::Point>::ConstPtr cloud
 
     res_left->header = cloud->header;
     res_right->header = cloud->header;
+    //Use RANSAC on filtered clouds
     if(params::filter_ransac){
         CurbDetector::RANSACCloud(res_left);
         CurbDetector::RANSACCloud(res_right);
